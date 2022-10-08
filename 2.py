@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import random
 
 data = pd.read_csv('/Users/ryan/Documents/vscode/practice/mnist/train.csv')
 
@@ -23,8 +24,10 @@ def init_params():
     b1 = np.random.rand(10, 1) - 0.5
     W2 = np.random.rand(10, 10) - 0.5
     b2 = np.random.rand(10, 1) - 0.5
+    W3 = np.random.rand(10, 10) - 0.5
+    b3 = np.random.rand(10, 1) - 0.5
 
-    return W1, b1, W2, b2
+    return W1, b1, W2, b2, W3, b3
 
 def ReLU(Z):
     return np.maximum(Z, 0)
@@ -38,13 +41,6 @@ def softmax(Z):
     A = np.exp(Z) / sum(np.exp(Z))
     return A
 
-def forwardProp(W1, b1, W2, b2, X):
-    Z1 = W1.dot(X) + b1
-    A1 = ReLU(Z1)
-    Z2 = W2.dot(A1) +  b2
-    A2 = softmax(Z2)
-    return Z1, A1, Z2, A2
-
 def ReLU_deriv(Z):
     return Z > 0
 
@@ -54,70 +50,109 @@ def one_hot(Y):
     one_hot_Y = one_hot_Y.T
     return one_hot_Y
 
-def backProp(Z1, A1, A2, W2, X, Y):
-    ohy = one_hot(Y)
-    dZ2 = A2 - ohy
-    dW2 = 1/m * dZ2.dot(A1.T)
-    db2 = 1/m * np.sum(dZ2)
-    dZ1 = W2.T.dot(dZ2) * ReLU_deriv(Z1)
-    dW1 = 1/m * dZ1.dot(X.T)
-    db1 = 1/m * np.sum(dZ1)
-
-    return dW1, db1, dW2, db2
-
-def updateParams(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
-    W1 = W1 - alpha * dW1
-    b1 = b1 - alpha * db1
-    W2 = W2 - alpha * dW2
-    b2 = b2 - alpha * db2
-
-    return W1, b1, W2, b2
-
-def getPredictions(A2):
-    return np.argmax(A2, 0)
+def getPredictions(A3):
+    return np.argmax(A3, 0)
 
 def getAccuracy(predictions, Y):
-    print(predictions, Y)
     return np.sum(predictions == Y) / Y.size
 
-def gradientDescent(X, Y, alpha, iterations):
-    W1, b1, W2, b2 = init_params()
-    for i in range(iterations):
-        Z1, A1, Z2, A2 = forwardProp(W1, b1, W2, b2, X)
-        dW1, db1, dW2, db2 = backProp(Z1, A1, A2, W2, X, Y)
-        W1, b1, W2, b2 = updateParams(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
-        if i % 10 == 0:
-            print('Iteration', i)
-            predictions = getPredictions(A2)
-            print(getAccuracy(predictions, Y))
-    
-    return W1, b1, W2, b2
-
-
-def makePredictions(X, W1, b1, W2, b2):
-    _, _, _, A2 = forwardProp(W1, b1, W2, b2, X)
-    predictions = getPredictions(A2)
+def makePredictions(X, W1, b1, W2, b2, W3, b3):
+    _, _, _, _, A3 = forwardProp(W1, b1, W2, b2, W3, b3, X)
+    predictions = getPredictions(A3)
     return predictions
 
-def testPredictions(index, W1, b1, W2, b2):
+def testPredictions(index, W1, b1, W2, b2, W3, b3):
     currentImage = X_train[:, index, None]
-    prediction = makePredictions(X_train[:, index, None], W1, b1, W2, b2)
+    prediction = makePredictions(X_train[:, index, None], W1, b1, W2, b2, W3, b3)
     label = Y_train[index]
     print('Prediction: ', prediction)
-    print('Label', label)
+    print('Label:', label)
 
     currentImage = currentImage.reshape((28, 28)) * 255
     plt.gray()
     plt.imshow(currentImage, interpolation='nearest')
     plt.show()
 
-W1, b1, W2, b2 = gradientDescent(X_train, Y_train, 0.10, 1000)
-testPredictions(0, W1, b1, W2, b2)
-testPredictions(983, W1, b1, W2, b2)
-testPredictions(96, W1, b1, W2, b2)
-testPredictions(23, W1, b1, W2, b2)
-testPredictions(123, W1, b1, W2, b2)
+def mean_squared_error(actual, predicted):
+	sum_square_error = 0.0
+	for i in range(len(actual)):
+		sum_square_error += (actual[i] - predicted[i])**2.0
+	mean_square_error = 1.0 / len(actual) * sum_square_error
+	return mean_square_error
+
+def gradientDescent(X, Y, alpha, iterations):
+    W1, b1, W2, b2, W3, b3 = init_params()
+    acc = 0.
+
+    for i in range(iterations):
+        # Forward and backprop
+        Z1, A1, Z2, A2, A3 = forwardProp(W1, b1, W2, b2, W3, b3, X)
+        dW1, db1, dW2, db2, dW3, db3 = backProp(Z1, Z2, A1, A2, A3, W2, W3, X, Y)
+        
+        # Gets accuracy of current weights and biases
+        # newacc = getAccuracy(getPredictions(A3), Y).item()
+
+        # Updates it only if the accuracy is greater
+        # Didn't work so leaving it for now
+        # if newacc > acc:
+        #     acc = newacc
+        W1, b1, W2, b2, W3, b3 = updateParams(W1, b1, W2, b2, W3, b3, dW1, db1, dW2, db2, dW3, db3, alpha)
 
 
+        if i % 10 == 0:
+            print('Iteration:', i)
+            predictions = getPredictions(A3)
+            print('Accuracy:', getAccuracy(predictions, Y))
+            print('Loss:', mean_squared_error(Y, predictions))
+    
+    return W1, b1, W2, b2, W3, b3
+
+def forwardProp(W1, b1, W2, b2, W3, b3, X):
+    Z1 = W1.dot(X) + b1
+    A1 = ReLU(Z1)
+    Z2 = W2.dot(A1) +  b2
+    A2 = ReLU(Z2)
+    Z3 = W3.dot(A2) + b3
+    A3 = softmax(Z3)
+    return Z1, A1, Z2, A2, A3
+
+def backProp(Z1, Z2, A1, A2, A3, W2, W3, X, Y):
+    ohy = one_hot(Y)
+    dZ3 = A3  - ohy
+    dW3 = 1 / m * dZ3.dot(A2.T)
+    db3 = 1 / m * np.sum(dZ3)
+    dZ2 = W3.T.dot(dZ3) * ReLU_deriv(Z2)
+    dW2 = 1 / m * dZ2.dot(A1.T)
+    db2 = 1 / m * np.sum(dZ2)
+    dZ1 = W2.T.dot(dZ2) * ReLU_deriv(Z1)
+    dW1 = 1 / m * dZ1.dot(X.T)
+    db1 = 1 / m * np.sum(dZ1)
+
+    return dW1, db1, dW2, db2, dW3, db3
+
+def updateParams(W1, b1, W2, b2, W3, b3, dW1, db1, dW2, db2, dW3, db3, alpha):
+    W1 = W1 - alpha * dW1
+    b1 = b1 - alpha * db1
+    W2 = W2 - alpha * dW2
+    b2 = b2 - alpha * db2
+    W3 = W3 - alpha * dW3
+    b3 = b3 - alpha * db3
+    return W1, b1, W2, b2, W3, b3
 
 
+iterations = 500
+
+W1, b1, W2, b2, W3, b3 = gradientDescent(X_train, Y_train, 0.50, iterations)
+for _ in range(10):
+    r = random.randint(0, iterations)
+    testPredictions(r, W1, b1, W2, b2, W3, b3)
+
+    # W1, b1, W2, b2, W3, b3 = init_params()
+    # for i in range(iterations):
+    #     Z1, A1, Z2, A2, A3 = forwardProp(W1, b1, W2, b2, W3, b3, X)
+    #     dW1, db1, dW2, db2, dW3, db3 = backProp(Z1, Z2, A1, A2, A3, W2, W3, X, Y)
+    #     W1, b1, W2, b2, W3, b3 = updateParams(W1, b1, W2, b2, W3, b3, dW1, db1, dW2, db2, dW3, db3, alpha)
+    #     if i % 10 == 0:
+    #         print('Iteration', i)
+    #         predictions = getPredictions(A3)
+    #         print(getAccuracy(predictions, Y))

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-data = pd.read_csv('/Users/ryan/Documents/programming/practice/mnist/train.csv')
+data = pd.read_csv('/Users/ryan/Documents/vscode/practice/mnist/train.csv')
 
 data = np.array(data)
 m, n = data.shape
@@ -62,8 +62,7 @@ def one_hot(Y):
     one_hot_Y = one_hot_Y.T
     return one_hot_Y
 
-def backward_prop(Z1, A1, Z2, A2, W1, W2, X, Y):
-    # one hot, 
+def backward_prop(Z1, A1, A2, W2, X, Y):
     one_hot_Y = one_hot(Y)
     dZ2 = A2 - one_hot_Y
     dW2 = 1 / m * dZ2.dot(A1.T)
@@ -91,7 +90,7 @@ def gradient_descent(X, Y, alpha, iterations):
     W1, b1, W2, b2 = init_params()
     for i in range(iterations):
         Z1, A1, Z2, A2 = forward_prop(W1, b1, W2, b2, X)
-        dW1, db1, dW2, db2 = backward_prop(Z1, A1, Z2, A2, W1, W2, X, Y)
+        dW1, db1, dW2, db2 = backward_prop(Z1, A1, A2, W2, X, Y)
         W1, b1, W2, b2 = update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
         if i % 10 == 0:
             print("Iteration: ", i)
