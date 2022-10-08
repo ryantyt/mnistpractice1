@@ -22,6 +22,7 @@ _,m_train = X_train.shape
 Y_train
 
 def init_params():
+    # random parameters between respective ranges
     W1 = np.random.rand(10, 784) - 0.5
     b1 = np.random.rand(10, 1) - 0.5
     W2 = np.random.rand(10, 10) - 0.5
@@ -29,13 +30,19 @@ def init_params():
     return W1, b1, W2, b2
 
 def ReLU(Z):
+    # rectified linear unit for yes/no ish, <0 then =0, >0 then itself
     return np.maximum(Z, 0)
 
 def softmax(Z):
+    # softmax function - converts a vector of numbers into a vector of probabilities
     A = np.exp(Z) / sum(np.exp(Z))
     return A
     
 def forward_prop(W1, b1, W2, b2, X):
+    # finds the dot product of weight and input X, add b1
+    # relu so its always > 0
+    # dot product again
+    # softmax function so its made into a probability
     Z1 = W1.dot(X) + b1
     A1 = ReLU(Z1)
     Z2 = W2.dot(A1) + b2
@@ -43,15 +50,20 @@ def forward_prop(W1, b1, W2, b2, X):
     return Z1, A1, Z2, A2
 
 def ReLU_deriv(Z):
+    # see if Z is non-zero
     return Z > 0
 
 def one_hot(Y):
+    # returns a new array of shape and type, filled with zeros
     one_hot_Y = np.zeros((Y.size, Y.max() + 1))
+    # where it stops and starts
     one_hot_Y[np.arange(Y.size), Y] = 1
+    # transposes the matrix
     one_hot_Y = one_hot_Y.T
     return one_hot_Y
 
 def backward_prop(Z1, A1, Z2, A2, W1, W2, X, Y):
+    # one hot, 
     one_hot_Y = one_hot(Y)
     dZ2 = A2 - one_hot_Y
     dW2 = 1 / m * dZ2.dot(A1.T)
